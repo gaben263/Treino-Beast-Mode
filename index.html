@@ -11,22 +11,26 @@
   *{box-sizing:border-box;margin:0;padding:0}
   html,body,#root{min-height:100vh;background:#0B0B12;font-family:'Segoe UI',system-ui,sans-serif;color:#F0F0FF}
   button{font-family:inherit;cursor:pointer}
+  input[type=number]{font-family:inherit}
   @keyframes fadeSlide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes popIn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 </style>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
 
-const { useState, useEffect, useCallback } = React;
+const { useState, useEffect, useCallback, useRef } = React;
 
-/* ─── DADOS DO TREINO ─────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   DADOS DO TREINO
+═══════════════════════════════════════════════════════════════ */
 const semana = [
   {dia:"SEG",periodo:"MANHÃ",cor:"#FF6B35",emoji:"💪",foco:"PEITO + TRÍCEPS",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Caminhada rápida pra aquecer as articulações. Postura ereta!"},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Caminhada rápida pra aquecer as articulações. Postura ereta!",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO FORÇA — 3 rounds",tipo:"main",nota:"Faça todos em sequência, depois 60s de descanso.",exercicios:[
       {nome:"Supino na Máquina",series:"3x",reps:"12 reps",descanso:"no circuito",equip:"Máquina",dica:"Costas coladas. Empurre para longe. Expire na subida."},
@@ -37,12 +41,12 @@ const semana = [
     ]},
     {titulo:"🏁 FINALIZAÇÃO",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"3x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"Segura 1 segundo na contração. Respira!"},
-      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Pedala no seu ritmo. Dopamina garantida! 🎶"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Pedala no seu ritmo. Dopamina garantida! 🎶",semCarga:true},
     ]},
   ]},
   {dia:"SEG",periodo:"NOITE",cor:"#4ECDC4",emoji:"🏋️",foco:"COSTAS + BÍCEPS",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Caminhada leve. Ativa a circulação antes de puxar peso."},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Caminhada leve. Ativa a circulação antes de puxar peso.",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO FORÇA — 3 rounds",tipo:"main",nota:"Sequência completa, depois 60s de descanso.",exercicios:[
       {nome:"Puxada Frontal na Máquina",series:"3x",reps:"12 reps",descanso:"no circuito",equip:"Máquina",dica:"Peito aberto, puxa até o queixo. Cotovelos para baixo."},
@@ -53,12 +57,12 @@ const semana = [
     ]},
     {titulo:"🏁 FINALIZAÇÃO",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"3x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"Concentra no abdômen. Não usa o pescoço!"},
-      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Missão do dia quase concluída. Empurra! 💥"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Missão do dia quase concluída. Empurra! 💥",semCarga:true},
     ]},
   ]},
   {dia:"TER",periodo:"MANHÃ",cor:"#A855F7",emoji:"🦵",foco:"PERNAS — QUADRÍCEPS",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Aquece os joelhos antes de agachar e pressionar."},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Aquece os joelhos antes de agachar e pressionar.",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO FORÇA — 3 rounds",tipo:"main",nota:"Sequência completa, 60s entre rounds.",exercicios:[
       {nome:"Leg Press 45°",series:"3x",reps:"15 reps",descanso:"no circuito",equip:"Máquina",dica:"Pés na largura do quadril. Desça até 90°, não trave o joelho."},
@@ -68,12 +72,12 @@ const semana = [
     ]},
     {titulo:"🏁 FINALIZAÇÃO",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"3x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"Mantém foco no abdômen, não no pescoço."},
-      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Pernas queimando = progresso acontecendo! 💥"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Pernas queimando = progresso acontecendo! 💥",semCarga:true},
     ]},
   ]},
   {dia:"TER",periodo:"NOITE",cor:"#EC4899",emoji:"🍑",foco:"PERNAS — POSTERIOR + GLÚTEOS",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Ativa o posterior antes de trabalhar isquio e glúteo."},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Ativa o posterior antes de trabalhar isquio e glúteo.",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO FORÇA — 3 rounds",tipo:"main",nota:"Sequência completa, 60s entre rounds.",exercicios:[
       {nome:"Cadeira Flexora (sentada)",series:"3x",reps:"12 reps",descanso:"no circuito",equip:"Máquina",dica:"Desce devagar (3 seg). O isquio vai queimar!"},
@@ -84,12 +88,12 @@ const semana = [
     ]},
     {titulo:"🏁 FINALIZAÇÃO",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"3x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"Finaliza com força! Abdômen contraído."},
-      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"MISSÃO CUMPRIDA! Você foi 2x hoje. 🏆"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"MISSÃO CUMPRIDA! Você foi 2x hoje. 🏆",semCarga:true},
     ]},
   ]},
   {dia:"QUA",periodo:"MANHÃ",cor:"#F59E0B",emoji:"🎯",foco:"OMBROS + CORE",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Ombros = articulação delicada. Aquece bem!"},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Ombros = articulação delicada. Aquece bem!",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO FORÇA — 3 rounds",tipo:"main",nota:"Sequência completa, 60s entre rounds.",exercicios:[
       {nome:"Desenvolvimento na Máquina",series:"3x",reps:"12 reps",descanso:"no circuito",equip:"Máquina",dica:"Não trave os cotovelos no topo. Core firme!"},
@@ -100,12 +104,12 @@ const semana = [
     {titulo:"🏁 CORE DESTRUIDOR",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"4x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"4 séries hoje! Segura 2 seg na contração."},
       {nome:"Abdominal Infra na Máquina",series:"3x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"Foca na parte de baixo do abdômen."},
-      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Respira, sorri. Você está mandando bem! ✨"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Respira, sorri. Você está mandando bem! ✨",semCarga:true},
     ]},
   ]},
   {dia:"QUA",periodo:"NOITE",cor:"#EF4444",emoji:"⚡",foco:"FULL BODY — MÁQUINAS",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Full Body — aquece tudo!"},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Full Body — aquece tudo!",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO FULL BODY — 4 rounds",tipo:"main",nota:"4 rounds intensos. 60s entre rounds. Vai!",exercicios:[
       {nome:"Leg Press 45°",series:"4x",reps:"15 reps",descanso:"no circuito",equip:"Máquina",dica:"Explosivo na subida, controlado na descida."},
@@ -116,12 +120,12 @@ const semana = [
     ]},
     {titulo:"🏁 FINALIZAÇÃO",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"3x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"Último esforço do dia. Vai!"},
-      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Quarta concluída. Você é fera! 🔥"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Quarta concluída. Você é fera! 🔥",semCarga:true},
     ]},
   ]},
   {dia:"QUI",periodo:"MANHÃ",cor:"#06B6D4",emoji:"🔵",foco:"PEITO + COSTAS (VOLUME)",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Peito e costas — os maiores músculos do tronco!"},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Peito e costas — os maiores músculos do tronco!",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO FORÇA — 3 rounds",tipo:"main",nota:"Alterna peito e costas — recuperação ativa!",exercicios:[
       {nome:"Supino na Máquina",series:"3x",reps:"12 reps",descanso:"no circuito",equip:"Máquina",dica:"Mais carga que segunda! Progresso gradual."},
@@ -132,12 +136,12 @@ const semana = [
     ]},
     {titulo:"🏁 FINALIZAÇÃO",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"3x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"Concentração total. Abdômen ativo!"},
-      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Quase no fim da semana. Segura!"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Quase no fim da semana. Segura!",semCarga:true},
     ]},
   ]},
   {dia:"QUI",periodo:"NOITE",cor:"#8B5CF6",emoji:"💜",foco:"BRAÇOS — BÍCEPS + TRÍCEPS",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Dia de braços — o treino mais gostoso! 💪"},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Dia de braços — o treino mais gostoso! 💪",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO BRAÇOS — 4 rounds",tipo:"main",nota:"Alterna bíceps e tríceps — bomba total!",exercicios:[
       {nome:"Rosca Direta com Barra",series:"4x",reps:"12 reps",descanso:"no circuito",equip:"Barra",dica:"Cotovelos FIXOS. Sem balanço!"},
@@ -148,12 +152,12 @@ const semana = [
     ]},
     {titulo:"🏁 FINALIZAÇÃO",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"3x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"Braços bombeados + abdômen forte. Combo!"},
-      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Dia de braços concluído. Que dia lindo! 🏆"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Dia de braços concluído. Que dia lindo! 🏆",semCarga:true},
     ]},
   ]},
   {dia:"SEX",periodo:"MANHÃ",cor:"#10B981",emoji:"🦿",foco:"PERNAS COMPLETO",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Pernas completo = treino mais pesado. Aquece bem!"},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Pernas completo = treino mais pesado. Aquece bem!",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO FORÇA — 3 rounds",tipo:"main",nota:"Quad + posterior + glúteo — tudo hoje!",exercicios:[
       {nome:"Leg Press 45°",series:"3x",reps:"15 reps",descanso:"no circuito",equip:"Máquina",dica:"Maior carga da semana aqui. Vai com tudo!"},
@@ -164,12 +168,12 @@ const semana = [
     ]},
     {titulo:"🏁 FINALIZAÇÃO",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"3x",reps:"15 reps",descanso:"30s",equip:"Máquina",dica:"Último abdômen da semana — dá tudo!"},
-      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"FIM DE SEMANA CHEGANDO! 🎉"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"FIM DE SEMANA CHEGANDO! 🎉",semCarga:true},
     ]},
   ]},
   {dia:"SEX",periodo:"NOITE",cor:"#F97316",emoji:"🌅",foco:"OMBROS + ABDÔMEN FINAL",blocos:[
     {titulo:"🔥 ATIVAÇÃO — 5 min",tipo:"warmup",exercicios:[
-      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Último treino da semana. Deixa tudo na academia!"},
+      {nome:"Esteira (aquecimento)",series:"1x",reps:"5 min",descanso:"—",equip:"Cardio",dica:"Último treino da semana. Deixa tudo na academia!",semCarga:true},
     ]},
     {titulo:"⚡ CIRCUITO FORÇA — 3 rounds",tipo:"main",nota:"Último treino da semana — arrebenta!",exercicios:[
       {nome:"Desenvolvimento na Máquina",series:"3x",reps:"12 reps",descanso:"no circuito",equip:"Máquina",dica:"Ombros pra baixo antes de pressionar. Sem encolher!"},
@@ -180,11 +184,14 @@ const semana = [
     {titulo:"🏁 ABDÔMEN FINAL DE SEMANA 🔥",tipo:"finisher",exercicios:[
       {nome:"Abdominal na Máquina",series:"4x",reps:"20 reps",descanso:"20s",equip:"Máquina",dica:"4×20! Semana completa = mereceu!"},
       {nome:"Abdominal Infra na Máquina",series:"3x",reps:"15 reps",descanso:"20s",equip:"Máquina",dica:"Parte baixa do abdômen. Foco total!"},
-      {nome:"Bike Ergométrica",series:"1x",reps:"10 min",descanso:"—",equip:"Cardio",dica:"10 min hoje! FIM DE SEMANA MERECIDO. VOCÊ É INCRÍVEL! 🏆🔥"},
+      {nome:"Bike Ergométrica",series:"1x",reps:"10 min",descanso:"—",equip:"Cardio",dica:"10 min hoje! FIM DE SEMANA MERECIDO. VOCÊ É INCRÍVEL! 🏆🔥",semCarga:true},
     ]},
   ]},
 ];
 
+/* ═══════════════════════════════════════════════════════════════
+   CONSTANTES
+═══════════════════════════════════════════════════════════════ */
 const EQUIP={
   "Máquina":{icon:"🔩",cor:"#FF6B35",onde:"Aparelho com encosto e movimento guiado"},
   "Cabo":{icon:"🔗",cor:"#4ECDC4",onde:"Torre com polia — ajusta a altura do cabo"},
@@ -194,40 +201,37 @@ const EQUIP={
   "Smith":{icon:"🏗️",cor:"#06B6D4",onde:"Gaiola com barra guiada nos trilhos"},
   "Cardio":{icon:"🚴",cor:"#EF4444",onde:"Área de cardio — bikes e esteiras"},
 };
-
 const tipoStyle={
   warmup:{bg:"#FFFBEB",border:"#F59E0B"},
   main:{bg:"#EFF6FF",border:"#3B82F6"},
   finisher:{bg:"#F0FDF4",border:"#22C55E"},
 };
+const fmt=(d)=>{const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${dd}`;};
+const today=fmt(new Date());
+const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DIAS_SEMANA_LABEL=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
-/* ─── UTILS ──────────────────────────────────────────────────── */
-const fmt = (d) => {
-  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${dd}`;
+/* ═══════════════════════════════════════════════════════════════
+   HELPERS DE STORAGE
+═══════════════════════════════════════════════════════════════ */
+const ls = {
+  get:(k,def={})=>{try{return JSON.parse(localStorage.getItem(k)||"null")??def;}catch{return def;}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}},
 };
-const today = fmt(new Date());
 
-const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const DIAS_SEMANA_LABEL = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
-
-/* ─── IMAGEM ─────────────────────────────────────────────────── */
-function ImgBusca({nome, cor}){
-  const [estado, setEstado] = useState("idle");
-  const [url, setUrl] = useState(null);
-  const buscar = async () => {
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENTE IMAGEM
+═══════════════════════════════════════════════════════════════ */
+function ImgBusca({nome,cor}){
+  const [estado,setEstado]=useState("idle");
+  const [url,setUrl]=useState(null);
+  const buscar=async()=>{
     setEstado("loading");
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,
-          tools:[{type:"web_search_20250305",name:"web_search"}],
-          messages:[{role:"user",content:`Find a real image URL showing the gym exercise: "${nome}". Return ONLY a single direct image URL ending in .jpg, .jpeg, .png or .gif. No other text.`}]
-        })
-      });
-      const data = await res.json();
-      const texto = (data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
-      const match = texto.match(/https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|gif|webp)/i);
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:`Find a real image URL showing the gym exercise: "${nome}". Return ONLY a single direct image URL ending in .jpg, .jpeg, .png or .gif. No other text.`}]})});
+      const data=await res.json();
+      const texto=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("");
+      const match=texto.match(/https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|gif|webp)/i);
       if(match){setUrl(match[0]);setEstado("ok");}else setEstado("erro");
     }catch(e){setEstado("erro");}
   };
@@ -237,11 +241,199 @@ function ImgBusca({nome, cor}){
   return <div style={{background:`${cor}12`,border:`2px dashed ${cor}44`,borderRadius:10,padding:"18px 0",textAlign:"center",marginBottom:10}}><div style={{fontSize:40}}>🏋️</div><div style={{fontSize:12,color:cor,fontWeight:700,marginTop:6}}>{nome}</div></div>;
 }
 
-/* ─── CARD DE EXERCÍCIO ──────────────────────────────────────── */
-function ExCard({ex, done, onCheck, cor}){
-  const [open, setOpen] = useState(false);
-  const eq = EQUIP[ex.equip]||EQUIP["Máquina"];
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENTE CARGA — mini bloco inline dentro do ExCard
+═══════════════════════════════════════════════════════════════ */
+function CargaWidget({exNome, cor}){
+  const KEY = "tdah_cargas";
+  const [cargas, setCargas] = useState(()=>ls.get(KEY,{}));
+  const [editando, setEditando] = useState(false);
+  const [valor, setValor] = useState("");
+  const [obs, setObs] = useState("");
+  const inputRef = useRef(null);
+
+  const hist = cargas[exNome] || [];          // [{data, kg, obs}]
+  const ultimo = hist[hist.length - 1];       // registro mais recente
+  const penultimo = hist[hist.length - 2];    // para comparar progresso
+
+  const salvar = () => {
+    const kg = parseFloat(valor.replace(",","."));
+    if(isNaN(kg)||kg<=0){ setEditando(false); return; }
+    const novo = {data: today, kg, obs: obs.trim()};
+    const prox = {...cargas};
+    prox[exNome] = [...(prox[exNome]||[]), novo];
+    setCargas(prox);
+    ls.set(KEY, prox);
+    setEditando(false);
+    setValor("");
+    setObs("");
+  };
+
+  useEffect(()=>{ if(editando && inputRef.current) inputRef.current.focus(); },[editando]);
+
+  // Badge de tendência
+  const tendencia = ()=>{
+    if(!ultimo||!penultimo) return null;
+    if(ultimo.kg > penultimo.kg) return {icon:"↑", cor:"#22C55E", txt:`+${(ultimo.kg-penultimo.kg).toFixed(1)} kg`};
+    if(ultimo.kg < penultimo.kg) return {icon:"↓", cor:"#EF4444", txt:`-${(penultimo.kg-ultimo.kg).toFixed(1)} kg`};
+    return {icon:"→", cor:"#F59E0B", txt:"manteve"};
+  };
+  const tend = tendencia();
+
   return (
+    <div style={{marginTop:10,background:"#0D0D1A",border:`1px solid ${cor}33`,borderRadius:10,overflow:"hidden"}}>
+
+      {/* Cabeçalho da carga */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 12px",borderBottom: editando||hist.length>0?"1px solid #1E1E2E":"none"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontSize:14}}>🏋️</span>
+          <span style={{fontSize:11,fontWeight:800,color:"#888",letterSpacing:0.5}}>CARGA</span>
+          {ultimo && (
+            <div style={{display:"flex",alignItems:"center",gap:5}}>
+              <span style={{fontSize:13,fontWeight:900,color:cor}}>{ultimo.kg} kg</span>
+              {tend && (
+                <span style={{fontSize:10,fontWeight:800,color:tend.cor,background:`${tend.cor}18`,borderRadius:5,padding:"1px 6px"}}>
+                  {tend.icon} {tend.txt}
+                </span>
+              )}
+            </div>
+          )}
+          {!ultimo && <span style={{fontSize:11,color:"#444",fontStyle:"italic"}}>nenhuma registrada</span>}
+        </div>
+        <button
+          onClick={()=>setEditando(e=>!e)}
+          style={{background:editando?`${cor}22`:"#1A1A28",border:`1px solid ${editando?cor:"#333"}`,borderRadius:7,padding:"4px 10px",color:editando?cor:"#666",fontSize:11,fontWeight:700,transition:"all 0.15s"}}
+        >
+          {editando?"✕ cancelar":"+ registrar"}
+        </button>
+      </div>
+
+      {/* Última sessão + histórico rápido */}
+      {!editando && hist.length>0 && (
+        <div style={{padding:"8px 12px"}}>
+          {/* Última carga destacada */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+            <div>
+              <div style={{fontSize:9,color:"#444",fontWeight:700,letterSpacing:1,marginBottom:2}}>ÚLTIMA VEZ · {ultimo.data}</div>
+              <div style={{fontSize:18,fontWeight:900,color:cor}}>{ultimo.kg} kg</div>
+              {ultimo.obs && <div style={{fontSize:11,color:"#555",marginTop:1,fontStyle:"italic"}}>"{ultimo.obs}"</div>}
+            </div>
+            {penultimo && (
+              <div style={{textAlign:"right"}}>
+                <div style={{fontSize:9,color:"#444",fontWeight:700,letterSpacing:1,marginBottom:2}}>ANTES · {penultimo.data}</div>
+                <div style={{fontSize:14,fontWeight:700,color:"#444"}}>{penultimo.kg} kg</div>
+              </div>
+            )}
+          </div>
+
+          {/* Histórico compacto — últimos 5 */}
+          {hist.length>1 && (
+            <div>
+              <div style={{fontSize:9,color:"#333",fontWeight:700,letterSpacing:1,marginBottom:4}}>HISTÓRICO</div>
+              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>
+                {[...hist].reverse().slice(0,6).map((h,i)=>(
+                  <div key={i} style={{
+                    background: i===0?`${cor}22`:"#16161E",
+                    border:`1px solid ${i===0?cor:"#2A2A3A"}`,
+                    borderRadius:7,padding:"3px 8px",
+                    fontSize:10,color:i===0?cor:"#555",fontWeight:700,
+                  }}>
+                    {h.kg}kg
+                    <span style={{fontSize:8,color:i===0?`${cor}99`:"#333",marginLeft:3,fontWeight:400}}>
+                      {h.data.slice(5)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Formulário de registro */}
+      {editando && (
+        <div style={{padding:"12px",animation:"fadeSlide 0.15s ease"}}>
+          {ultimo && (
+            <div style={{background:`${cor}12`,border:`1px solid ${cor}30`,borderRadius:8,padding:"6px 10px",marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <span style={{fontSize:11,color:"#666"}}>Última vez:</span>
+              <span style={{fontSize:13,fontWeight:900,color:cor}}>{ultimo.kg} kg · {ultimo.data}</span>
+            </div>
+          )}
+          <div style={{display:"flex",gap:8,alignItems:"flex-end"}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:9,color:"#555",fontWeight:700,letterSpacing:1,marginBottom:5}}>CARGA (kg)</div>
+              <div style={{display:"flex",alignItems:"center",gap:0,background:"#0A0A14",border:`2px solid ${cor}`,borderRadius:8,overflow:"hidden"}}>
+                <button
+                  onClick={()=>setValor(v=>{const n=parseFloat(v||0)-2.5;return n>0?String(n):"0";})}
+                  style={{background:"transparent",border:"none",color:cor,fontSize:18,fontWeight:900,padding:"0 10px",height:40,lineHeight:1}}
+                >−</button>
+                <input
+                  ref={inputRef}
+                  type="number"
+                  min="0"
+                  step="2.5"
+                  value={valor}
+                  onChange={e=>setValor(e.target.value)}
+                  onKeyDown={e=>e.key==="Enter"&&salvar()}
+                  placeholder="0"
+                  style={{flex:1,background:"transparent",border:"none",color:"#F0F0FF",fontSize:16,fontWeight:900,textAlign:"center",width:0,outline:"none"}}
+                />
+                <button
+                  onClick={()=>setValor(v=>{const n=parseFloat(v||0)+2.5;return String(n);})}
+                  style={{background:"transparent",border:"none",color:cor,fontSize:18,fontWeight:900,padding:"0 10px",height:40,lineHeight:1}}
+                >+</button>
+              </div>
+            </div>
+            <button
+              onClick={salvar}
+              style={{height:40,padding:"0 16px",background:cor,border:"none",borderRadius:8,color:"#fff",fontSize:13,fontWeight:900,flexShrink:0}}
+            >
+              Salvar ✓
+            </button>
+          </div>
+
+          {/* Campo de observação opcional */}
+          <input
+            type="text"
+            value={obs}
+            onChange={e=>setObs(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&salvar()}
+            placeholder="Observação opcional (ex: fácil, pesado demais...)"
+            maxLength={60}
+            style={{marginTop:8,width:"100%",background:"#0A0A14",border:"1px solid #2A2A3A",borderRadius:8,padding:"8px 10px",color:"#aaa",fontSize:11,outline:"none"}}
+          />
+
+          {/* Atalhos rápidos de peso */}
+          {ultimo && (
+            <div style={{marginTop:8}}>
+              <div style={{fontSize:9,color:"#444",letterSpacing:1,fontWeight:700,marginBottom:5}}>SUGESTÕES</div>
+              <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                {[-5,-2.5,0,2.5,5].map(delta=>{
+                  const kg = Math.max(0, ultimo.kg+delta);
+                  const label = delta===0?"igual":delta>0?`+${delta}kg`:`${delta}kg`;
+                  return (
+                    <button key={delta} onClick={()=>setValor(String(kg))}
+                      style={{background:delta===0?"#1E1E2E":delta>0?`${cor}22`:"#1A0A0A",border:`1px solid ${delta===0?"#333":delta>0?cor:"#EF4444"}`,borderRadius:7,padding:"4px 10px",fontSize:11,fontWeight:700,color:delta===0?"#555":delta>0?cor:"#EF4444"}}>
+                      {kg}kg <span style={{fontSize:9,opacity:0.7}}>({label})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CARD DE EXERCÍCIO
+═══════════════════════════════════════════════════════════════ */
+function ExCard({ex,done,onCheck,cor}){
+  const [open,setOpen]=useState(false);
+  const eq=EQUIP[ex.equip]||EQUIP["Máquina"];
+  return(
     <div style={{background:done?"#0A1F0A":"#13131C",borderLeft:`4px solid ${done?"#22C55E":cor}`,borderBottom:"1px solid #1E1E2E",transition:"background 0.2s"}}>
       <div style={{display:"flex",gap:10,padding:"11px 14px",alignItems:"flex-start"}}>
         <button onClick={onCheck} style={{width:28,height:28,borderRadius:8,flexShrink:0,marginTop:1,border:`2px solid ${done?"#22C55E":"#3A3A4A"}`,background:done?"#22C55E":"transparent",color:"#fff",fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.15s"}}>
@@ -259,6 +451,14 @@ function ExCard({ex, done, onCheck, cor}){
           </button>
         </div>
       </div>
+
+      {/* Widget de carga sempre visível abaixo (exceto cardio/aquecimento sem peso) */}
+      {!ex.semCarga && (
+        <div style={{padding:"0 14px 10px"}}>
+          <CargaWidget exNome={ex.nome} cor={cor}/>
+        </div>
+      )}
+
       {open&&(
         <div style={{borderTop:"1px solid #1E1E2E",padding:"12px 14px",background:"#0D0D18",animation:"fadeSlide 0.2s ease"}}>
           <ImgBusca nome={ex.nome} cor={cor}/>
@@ -276,56 +476,36 @@ function ExCard({ex, done, onCheck, cor}){
   );
 }
 
-/* ─── CALENDÁRIO ─────────────────────────────────────────────── */
-function Calendario({historico, onVoltar}){
-  const now = new Date();
-  const [ano, setAno] = useState(now.getFullYear());
-  const [mes, setMes] = useState(now.getMonth());
-  const [detalhe, setDetalhe] = useState(null);
-
-  const primeiroDia = new Date(ano, mes, 1).getDay();
-  const diasNoMes = new Date(ano, mes+1, 0).getDate();
-
-  const prevMes = () => { if(mes===0){setMes(11);setAno(a=>a-1);}else setMes(m=>m-1); setDetalhe(null); };
-  const nextMes = () => { if(mes===11){setMes(0);setAno(a=>a+1);}else setMes(m=>m+1); setDetalhe(null); };
-
-  const getStatus = (dateStr) => {
-    const h = historico[dateStr];
-    if(!h) return null;
-    const temManha = h.manha === true;
-    const temNoite = h.noite === true;
-    if(temManha && temNoite) return "completo";
-    if(temManha) return "manha";
-    if(temNoite) return "noite";
-    return null;
+/* ═══════════════════════════════════════════════════════════════
+   CALENDÁRIO
+═══════════════════════════════════════════════════════════════ */
+function Calendario({historico,onVoltar}){
+  const now=new Date();
+  const [ano,setAno]=useState(now.getFullYear());
+  const [mes,setMes]=useState(now.getMonth());
+  const [detalhe,setDetalhe]=useState(null);
+  const primeiroDia=new Date(ano,mes,1).getDay();
+  const diasNoMes=new Date(ano,mes+1,0).getDate();
+  const prevMes=()=>{if(mes===0){setMes(11);setAno(a=>a-1);}else setMes(m=>m-1);setDetalhe(null);};
+  const nextMes=()=>{if(mes===11){setMes(0);setAno(a=>a+1);}else setMes(m=>m+1);setDetalhe(null);};
+  const getStatus=(s)=>{const h=historico[s];if(!h)return null;const m=h.manha===true,n=h.noite===true;if(m&&n)return "completo";if(m)return "manha";if(n)return "noite";return null;};
+  const totalTreinos=Object.values(historico).filter(h=>h.manha||h.noite).length;
+  const totalCompletos=Object.values(historico).filter(h=>h.manha&&h.noite).length;
+  const totalManha=Object.values(historico).filter(h=>h.manha&&!h.noite).length;
+  const totalNoite=Object.values(historico).filter(h=>h.noite&&!h.manha).length;
+  const cellStyle=(status,isToday)=>{
+    const base={width:38,height:38,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",cursor:status?"pointer":"default",fontSize:12,fontWeight:700,position:"relative",transition:"all 0.15s",border:isToday?"2px solid #F59E0B":"2px solid transparent"};
+    if(status==="completo") return {...base,background:"linear-gradient(135deg,#22C55E,#4ADE80)",color:"#052e16"};
+    if(status==="manha")    return {...base,background:"linear-gradient(135deg,#F59E0B,#FCD34D)",color:"#451a03"};
+    if(status==="noite")    return {...base,background:"linear-gradient(135deg,#6366F1,#A5B4FC)",color:"#1e1b4b"};
+    return {...base,background:"#16161E",color:isToday?"#F59E0B":"#555"};
   };
+  const diasGrid=[];
+  for(let i=0;i<primeiroDia;i++) diasGrid.push(null);
+  for(let d=1;d<=diasNoMes;d++) diasGrid.push(d);
 
-  const totalTreinos = Object.values(historico).filter(h => h.manha || h.noite).length;
-  const totalCompletos = Object.values(historico).filter(h => h.manha && h.noite).length;
-  const totalManha = Object.values(historico).filter(h => h.manha && !h.noite).length;
-  const totalNoite = Object.values(historico).filter(h => h.noite && !h.manha).length;
-
-  const cellStyle = (status, isToday, dateStr) => {
-    const base = {
-      width:38, height:38, borderRadius:10, display:"flex", alignItems:"center",
-      justifyContent:"center", flexDirection:"column", cursor: status ? "pointer" : "default",
-      fontSize:12, fontWeight:700, position:"relative", transition:"all 0.15s",
-      border: isToday ? "2px solid #F59E0B" : "2px solid transparent",
-    };
-    if(status==="completo") return {...base, background:"linear-gradient(135deg,#22C55E,#4ADE80)", color:"#052e16"};
-    if(status==="manha")    return {...base, background:"linear-gradient(135deg,#F59E0B,#FCD34D)", color:"#451a03"};
-    if(status==="noite")    return {...base, background:"linear-gradient(135deg,#6366F1,#A5B4FC)", color:"#1e1b4b"};
-    return {...base, background:"#16161E", color: isToday ? "#F59E0B" : "#555"};
-  };
-
-  const diasGrid = [];
-  for(let i=0; i<primeiroDia; i++) diasGrid.push(null);
-  for(let d=1; d<=diasNoMes; d++) diasGrid.push(d);
-
-  return (
+  return(
     <div style={{background:"#0B0B12",minHeight:"100vh",maxWidth:430,margin:"0 auto",paddingBottom:40}}>
-
-      {/* HEADER CALENDÁRIO */}
       <div style={{background:"linear-gradient(160deg,#22C55E18 0%,#0B0B12 55%)",borderBottom:"3px solid #22C55E",padding:"18px 16px 14px",position:"sticky",top:0,zIndex:100,backdropFilter:"blur(12px)"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:4}}>
           <button onClick={onVoltar} style={{background:"#16161E",border:"1px solid #2A2A3A",borderRadius:8,padding:"5px 10px",color:"#aaa",fontSize:12,fontWeight:700}}>← Treino</button>
@@ -334,167 +514,97 @@ function Calendario({historico, onVoltar}){
         <div style={{fontSize:20,fontWeight:900}}>📅 Meu Progresso</div>
         <div style={{fontSize:11,color:"#666",marginTop:2}}>Acompanhe sua evolução mês a mês</div>
       </div>
-
       <div style={{padding:"16px"}}>
-
-        {/* STATS */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:18}}>
-          {[
-            {label:"Dias Treinados",valor:totalTreinos,cor:"#22C55E",bg:"#0F2010"},
-            {label:"Manhã + Noite",valor:totalCompletos,cor:"#F59E0B",bg:"#1A1200"},
-            {label:"Parciais",valor:totalManha+totalNoite,cor:"#6366F1",bg:"#12102A"},
-          ].map(s=>(
+          {[{label:"Dias Treinados",valor:totalTreinos,cor:"#22C55E",bg:"#0F2010"},{label:"Manhã + Noite",valor:totalCompletos,cor:"#F59E0B",bg:"#1A1200"},{label:"Parciais",valor:totalManha+totalNoite,cor:"#6366F1",bg:"#12102A"}].map(s=>(
             <div key={s.label} style={{background:s.bg,border:`1px solid ${s.cor}33`,borderRadius:12,padding:"10px 8px",textAlign:"center"}}>
               <div style={{fontSize:22,fontWeight:900,color:s.cor}}>{s.valor}</div>
               <div style={{fontSize:9,color:"#555",fontWeight:700,letterSpacing:0.5,marginTop:2}}>{s.label}</div>
             </div>
           ))}
         </div>
-
-        {/* LEGENDA */}
         <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-          {[
-            {cor:"linear-gradient(135deg,#22C55E,#4ADE80)",txt:"#052e16",label:"☀️ + 🌙 Completo"},
-            {cor:"linear-gradient(135deg,#F59E0B,#FCD34D)",txt:"#451a03",label:"☀️ Só Manhã"},
-            {cor:"linear-gradient(135deg,#6366F1,#A5B4FC)",txt:"#1e1b4b",label:"🌙 Só Noite"},
-          ].map(l=>(
+          {[{cor:"linear-gradient(135deg,#22C55E,#4ADE80)",txt:"#052e16",label:"☀️ + 🌙 Completo"},{cor:"linear-gradient(135deg,#F59E0B,#FCD34D)",txt:"#451a03",label:"☀️ Só Manhã"},{cor:"linear-gradient(135deg,#6366F1,#A5B4FC)",txt:"#1e1b4b",label:"🌙 Só Noite"}].map(l=>(
             <div key={l.label} style={{background:l.cor,borderRadius:7,padding:"4px 10px",fontSize:10,fontWeight:800,color:l.txt}}>{l.label}</div>
           ))}
         </div>
-
-        {/* NAVEGAÇÃO MÊS */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
           <button onClick={prevMes} style={{background:"#16161E",border:"1px solid #2A2A3A",borderRadius:8,padding:"6px 14px",color:"#aaa",fontSize:16,fontWeight:900}}>‹</button>
           <div style={{fontSize:16,fontWeight:900,color:"#F0F0FF"}}>{MESES[mes]} {ano}</div>
           <button onClick={nextMes} style={{background:"#16161E",border:"1px solid #2A2A3A",borderRadius:8,padding:"6px 14px",color:"#aaa",fontSize:16,fontWeight:900}}>›</button>
         </div>
-
-        {/* LABELS DIAS DA SEMANA */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:6}}>
-          {DIAS_SEMANA_LABEL.map(d=>(
-            <div key={d} style={{textAlign:"center",fontSize:9,fontWeight:800,color:"#444",letterSpacing:0.5,padding:"4px 0"}}>{d}</div>
-          ))}
+          {DIAS_SEMANA_LABEL.map(d=><div key={d} style={{textAlign:"center",fontSize:9,fontWeight:800,color:"#444",letterSpacing:0.5,padding:"4px 0"}}>{d}</div>)}
         </div>
-
-        {/* GRID DIAS */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4,marginBottom:16}}>
           {diasGrid.map((d,i)=>{
             if(!d) return <div key={`e${i}`}/>;
-            const dateStr = `${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            const isToday = dateStr === today;
-            const status = getStatus(dateStr);
-            return (
-              <div key={dateStr} onClick={()=>status&&setDetalhe(detalhe===dateStr?null:dateStr)}
-                style={cellStyle(status,isToday,dateStr)}>
+            const dateStr=`${ano}-${String(mes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const isToday=dateStr===today;
+            const status=getStatus(dateStr);
+            return(
+              <div key={dateStr} onClick={()=>status&&setDetalhe(detalhe===dateStr?null:dateStr)} style={cellStyle(status,isToday)}>
                 <span style={{fontSize:12}}>{d}</span>
-                {status==="completo" && <span style={{fontSize:7,marginTop:1}}>✓✓</span>}
-                {status==="manha"    && <span style={{fontSize:7,marginTop:1}}>☀️</span>}
-                {status==="noite"    && <span style={{fontSize:7,marginTop:1}}>🌙</span>}
+                {status==="completo"&&<span style={{fontSize:7,marginTop:1}}>✓✓</span>}
+                {status==="manha"&&<span style={{fontSize:7,marginTop:1}}>☀️</span>}
+                {status==="noite"&&<span style={{fontSize:7,marginTop:1}}>🌙</span>}
               </div>
             );
           })}
         </div>
-
-        {/* DETALHE DO DIA */}
-        {detalhe && historico[detalhe] && (
+        {detalhe&&historico[detalhe]&&(
           <div style={{background:"#13131C",border:"1px solid #2A2A3A",borderRadius:14,padding:14,marginBottom:16,animation:"popIn 0.2s ease"}}>
-            <div style={{fontSize:13,fontWeight:900,color:"#F0F0FF",marginBottom:10}}>
-              📋 {new Date(detalhe+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}
-            </div>
-            {historico[detalhe].manha && (
-              <div style={{background:"#1A1200",border:"1px solid #F59E0B44",borderRadius:8,padding:"8px 12px",marginBottom:6}}>
-                <div style={{fontSize:11,color:"#F59E0B",fontWeight:800}}>☀️ MANHÃ — Concluído</div>
-                <div style={{fontSize:11,color:"#666",marginTop:2}}>{historico[detalhe].focoManha||""}</div>
-              </div>
-            )}
-            {historico[detalhe].noite && (
-              <div style={{background:"#120F2A",border:"1px solid #6366F144",borderRadius:8,padding:"8px 12px"}}>
-                <div style={{fontSize:11,color:"#A5B4FC",fontWeight:800}}>🌙 NOITE — Concluído</div>
-                <div style={{fontSize:11,color:"#666",marginTop:2}}>{historico[detalhe].focoNoite||""}</div>
-              </div>
-            )}
+            <div style={{fontSize:13,fontWeight:900,color:"#F0F0FF",marginBottom:10}}>📋 {new Date(detalhe+"T12:00:00").toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}</div>
+            {historico[detalhe].manha&&<div style={{background:"#1A1200",border:"1px solid #F59E0B44",borderRadius:8,padding:"8px 12px",marginBottom:6}}><div style={{fontSize:11,color:"#F59E0B",fontWeight:800}}>☀️ MANHÃ — Concluído</div><div style={{fontSize:11,color:"#666",marginTop:2}}>{historico[detalhe].focoManha||""}</div></div>}
+            {historico[detalhe].noite&&<div style={{background:"#120F2A",border:"1px solid #6366F144",borderRadius:8,padding:"8px 12px"}}><div style={{fontSize:11,color:"#A5B4FC",fontWeight:800}}>🌙 NOITE — Concluído</div><div style={{fontSize:11,color:"#666",marginTop:2}}>{historico[detalhe].focoNoite||""}</div></div>}
           </div>
         )}
-
-        {/* STREAK */}
-        {(() => {
-          let streak = 0;
-          const d = new Date();
-          while(true){
-            const s = fmt(d);
-            if(historico[s]?.manha || historico[s]?.noite){ streak++; d.setDate(d.getDate()-1); }
-            else break;
-            if(streak>365) break;
-          }
-          if(streak===0) return null;
-          return (
-            <div style={{background:"linear-gradient(135deg,#F59E0B22,#22C55E22)",border:"2px solid #F59E0B",borderRadius:14,padding:14,textAlign:"center"}}>
-              <div style={{fontSize:28,marginBottom:4}}>🔥</div>
-              <div style={{fontSize:18,fontWeight:900,color:"#F59E0B"}}>{streak} dia{streak>1?"s":""} seguido{streak>1?"s":""}!</div>
-              <div style={{fontSize:11,color:"#666",marginTop:4}}>Continua assim. Você está em chamas!</div>
-            </div>
-          );
+        {(()=>{
+          let streak=0;const d=new Date();
+          while(true){const s=fmt(d);if(historico[s]?.manha||historico[s]?.noite){streak++;d.setDate(d.getDate()-1);}else break;if(streak>365)break;}
+          if(streak===0)return null;
+          return <div style={{background:"linear-gradient(135deg,#F59E0B22,#22C55E22)",border:"2px solid #F59E0B",borderRadius:14,padding:14,textAlign:"center"}}><div style={{fontSize:28,marginBottom:4}}>🔥</div><div style={{fontSize:18,fontWeight:900,color:"#F59E0B"}}>{streak} dia{streak>1?"s":""} seguido{streak>1?"s":""}!</div><div style={{fontSize:11,color:"#666",marginTop:4}}>Continua assim. Você está em chamas!</div></div>;
         })()}
       </div>
     </div>
   );
 }
 
-/* ─── APP PRINCIPAL ──────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   APP PRINCIPAL
+═══════════════════════════════════════════════════════════════ */
 function App(){
-  const [idx, setIdx] = useState(0);
-  const [tela, setTela] = useState("treino"); // "treino" | "calendario"
-  const [checked, setChecked] = useState(() => {
-    try{ return JSON.parse(localStorage.getItem("tdah_checked")||"{}"); }catch{ return {}; }
-  });
-  const [historico, setHistorico] = useState(() => {
-    try{ return JSON.parse(localStorage.getItem("tdah_historico")||"{}"); }catch{ return {}; }
-  });
-
-  const treino = semana[idx];
-  const dias = ["SEG","TER","QUA","QUI","SEX"];
-
-  const toggle = useCallback((key) => {
-    setChecked(p => {
-      const next = {...p, [key]: !p[key]};
-      localStorage.setItem("tdah_checked", JSON.stringify(next));
-      return next;
-    });
-  }, []);
-
-  const total = treino.blocos.reduce((a,b)=>a+b.exercicios.length,0);
-  const feitos = treino.blocos.reduce((a,b,bi)=>a+b.exercicios.filter((_,ei)=>checked[`${idx}-${bi}-${ei}`]).length,0);
-  const pct = total ? Math.round(feitos/total*100) : 0;
-
-  // Registra no histórico quando treino completa 100%
-  useEffect(() => {
-    if(pct === 100){
-      const isPeriodoManha = treino.periodo === "MANHÃ";
-      setHistorico(prev => {
-        const next = {...prev};
-        if(!next[today]) next[today] = {};
-        if(isPeriodoManha){
-          next[today].manha = true;
-          next[today].focoManha = treino.foco;
-        } else {
-          next[today].noite = true;
-          next[today].focoNoite = treino.foco;
-        }
-        localStorage.setItem("tdah_historico", JSON.stringify(next));
-        return next;
+  const [idx,setIdx]=useState(0);
+  const [tela,setTela]=useState("treino");
+  const [checked,setChecked]=useState(()=>ls.get("tdah_checked",{}));
+  const [historico,setHistorico]=useState(()=>ls.get("tdah_historico",{}));
+  const treino=semana[idx];
+  const dias=["SEG","TER","QUA","QUI","SEX"];
+  const toggle=useCallback((key)=>{
+    setChecked(p=>{const next={...p,[key]:!p[key]};ls.set("tdah_checked",next);return next;});
+  },[]);
+  const total=treino.blocos.reduce((a,b)=>a+b.exercicios.length,0);
+  const feitos=treino.blocos.reduce((a,b,bi)=>a+b.exercicios.filter((_,ei)=>checked[`${idx}-${bi}-${ei}`]).length,0);
+  const pct=total?Math.round(feitos/total*100):0;
+  useEffect(()=>{
+    if(pct===100){
+      const isManha=treino.periodo==="MANHÃ";
+      setHistorico(prev=>{
+        const next={...prev};
+        if(!next[today])next[today]={};
+        if(isManha){next[today].manha=true;next[today].focoManha=treino.foco;}
+        else{next[today].noite=true;next[today].focoNoite=treino.foco;}
+        ls.set("tdah_historico",next);return next;
       });
     }
-  }, [pct, treino.periodo, treino.foco]);
+  },[pct,treino.periodo,treino.foco]);
+  const statusHoje=historico[today];
+  const hojeCompleto=statusHoje?.manha&&statusHoje?.noite;
+  const hojeManha=statusHoje?.manha&&!statusHoje?.noite;
+  const hojeNoite=statusHoje?.noite&&!statusHoje?.manha;
+  if(tela==="calendario") return <Calendario historico={historico} onVoltar={()=>setTela("treino")}/>;
 
-  // Status do dia atual no header
-  const statusHoje = historico[today];
-  const hojeCompleto = statusHoje?.manha && statusHoje?.noite;
-  const hojeManha   = statusHoje?.manha && !statusHoje?.noite;
-  const hojeNoite   = statusHoje?.noite && !statusHoje?.manha;
-
-  if(tela === "calendario") return <Calendario historico={historico} onVoltar={()=>setTela("treino")}/>;
-
-  return (
+  return(
     <div style={{background:"#0B0B12",minHeight:"100vh",maxWidth:430,margin:"0 auto",paddingBottom:120}}>
 
       {/* HEADER */}
@@ -505,24 +615,20 @@ function App(){
             <div style={{fontSize:21,fontWeight:900,lineHeight:1.15}}>{treino.emoji} {treino.foco}</div>
             <div style={{fontSize:11,color:"#666",marginTop:3}}>{treino.dia} {treino.periodo} · 45–55 min</div>
           </div>
-          {/* Botão calendário */}
           <button onClick={()=>setTela("calendario")} style={{background:"#16161E",border:"1px solid #2A2A3A",borderRadius:10,padding:"8px 10px",display:"flex",flexDirection:"column",alignItems:"center",gap:2,flexShrink:0,marginLeft:8}}>
             <span style={{fontSize:18}}>📅</span>
-            {hojeCompleto && <span style={{fontSize:8,color:"#22C55E",fontWeight:800}}>✓✓ HOJE</span>}
-            {hojeManha    && <span style={{fontSize:8,color:"#F59E0B",fontWeight:800}}>☀️ HOJE</span>}
-            {hojeNoite    && <span style={{fontSize:8,color:"#A5B4FC",fontWeight:800}}>🌙 HOJE</span>}
-            {!statusHoje  && <span style={{fontSize:8,color:"#444",fontWeight:700}}>VER</span>}
+            {hojeCompleto&&<span style={{fontSize:8,color:"#22C55E",fontWeight:800}}>✓✓ HOJE</span>}
+            {hojeManha&&<span style={{fontSize:8,color:"#F59E0B",fontWeight:800}}>☀️ HOJE</span>}
+            {hojeNoite&&<span style={{fontSize:8,color:"#A5B4FC",fontWeight:800}}>🌙 HOJE</span>}
+            {!statusHoje&&<span style={{fontSize:8,color:"#444",fontWeight:700}}>VER</span>}
           </button>
         </div>
-
-        {/* Indicador de hoje no header */}
-        {statusHoje && (
+        {statusHoje&&(
           <div style={{display:"flex",gap:6,marginTop:8}}>
-            {statusHoje.manha && <div style={{background:"#F59E0B22",border:"1px solid #F59E0B44",borderRadius:6,padding:"2px 8px",fontSize:10,color:"#F59E0B",fontWeight:700}}>☀️ Manhã ✓</div>}
-            {statusHoje.noite && <div style={{background:"#6366F122",border:"1px solid #6366F144",borderRadius:6,padding:"2px 8px",fontSize:10,color:"#A5B4FC",fontWeight:700}}>🌙 Noite ✓</div>}
+            {statusHoje.manha&&<div style={{background:"#F59E0B22",border:"1px solid #F59E0B44",borderRadius:6,padding:"2px 8px",fontSize:10,color:"#F59E0B",fontWeight:700}}>☀️ Manhã ✓</div>}
+            {statusHoje.noite&&<div style={{background:"#6366F122",border:"1px solid #6366F144",borderRadius:6,padding:"2px 8px",fontSize:10,color:"#A5B4FC",fontWeight:700}}>🌙 Noite ✓</div>}
           </div>
         )}
-
         <div style={{marginTop:10}}>
           <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"#555",marginBottom:5}}>
             <span style={{fontWeight:700,letterSpacing:1}}>⚡ PROGRESSO</span>
@@ -534,25 +640,18 @@ function App(){
         </div>
       </div>
 
-      {/* SELETOR */}
+      {/* SELETOR DIAS */}
       <div style={{padding:"12px 16px 0"}}>
         <div style={{display:"flex",gap:6,marginBottom:8}}>
           {dias.map(d=>{
             const pi=semana.findIndex(s=>s.dia===d);
             const ativo=semana[idx].dia===d;
-            const hd=historico[today];
-            const diaHoje = new Date().toLocaleDateString("pt-BR",{weekday:"short"}).replace(".","").toUpperCase().slice(0,3);
-            return (
-              <button key={d} onClick={()=>setIdx(pi)} style={{flex:1,padding:"7px 0",borderRadius:10,background:ativo?treino.cor:"#181824",color:ativo?"#fff":"#555",border:`2px solid ${ativo?treino.cor:"#252535"}`,fontWeight:800,fontSize:11,position:"relative"}}>
-                {d}
-              </button>
-            );
+            return <button key={d} onClick={()=>setIdx(pi)} style={{flex:1,padding:"7px 0",borderRadius:10,background:ativo?treino.cor:"#181824",color:ativo?"#fff":"#555",border:`2px solid ${ativo?treino.cor:"#252535"}`,fontWeight:800,fontSize:11}}>{d}</button>;
           })}
         </div>
         <div style={{display:"flex",gap:6,marginBottom:4}}>
           {semana.filter(s=>s.dia===treino.dia).map(s=>{
-            const si=semana.indexOf(s);
-            const ativo=si===idx;
+            const si=semana.indexOf(s);const ativo=si===idx;
             return <button key={si} onClick={()=>setIdx(si)} style={{flex:1,padding:"8px 0",borderRadius:10,background:ativo?`${s.cor}22`:"#181824",color:ativo?s.cor:"#444",border:`2px solid ${ativo?s.cor:"#252535"}`,fontWeight:800,fontSize:12}}>{s.periodo==="MANHÃ"?"☀️ MANHÃ":"🌙 NOITE"}</button>;
           })}
         </div>
@@ -562,7 +661,7 @@ function App(){
       <div style={{padding:"14px 16px"}}>
         {treino.blocos.map((bloco,bi)=>{
           const ts=tipoStyle[bloco.tipo]||tipoStyle.main;
-          return (
+          return(
             <div key={bi} style={{marginBottom:22}}>
               <div style={{background:ts.bg,border:`2px solid ${ts.border}`,borderRadius:"13px 13px 0 0",padding:"9px 14px"}}>
                 <div style={{fontSize:13,fontWeight:900,color:"#111"}}>{bloco.titulo}</div>
@@ -583,16 +682,15 @@ function App(){
           <div style={{fontSize:15,fontWeight:800}}>{pct===100?"MISSÃO CUMPRIDA! Você é uma fera!":pct>=50?"Metade feita! Não para agora!":"Foco total. Uma série por vez!"}</div>
           <div style={{fontSize:11,color:"#888",marginTop:6}}>
             {pct===100
-              ? <span>Treino salvo no calendário! <button onClick={()=>setTela("calendario")} style={{background:"none",border:"none",color:"#22C55E",fontSize:11,fontWeight:800,cursor:"pointer",textDecoration:"underline"}}>Ver calendário →</button></span>
-              : `${total-feitos} exercício(s) restante(s) ⚡`
-            }
+              ?<span>Treino salvo no calendário! <button onClick={()=>setTela("calendario")} style={{background:"none",border:"none",color:"#22C55E",fontSize:11,fontWeight:800,cursor:"pointer",textDecoration:"underline"}}>Ver calendário →</button></span>
+              :`${total-feitos} exercício(s) restante(s) ⚡`}
           </div>
         </div>
 
         {/* LEMBRETES */}
         <div style={{background:"#0D0D16",border:"1px solid #22223A",borderRadius:14,padding:16,marginTop:14}}>
           <div style={{fontSize:10,fontWeight:900,letterSpacing:3,color:"#444",marginBottom:12}}>🧠 LEMBRETES TDAH</div>
-          {[["🫁","Respire","Inspire antes, expire no esforço."],["🎯","Postura","3 seg de check antes de cada série."],["📸","Foto","Toca em 'ver foto + dica' pra ver qual máquina usar."],["💧","Hidrate","Um gole de água entre cada exercício."],["✅","Check","Marque ao terminar — dopamina liberada!"],["📅","Calendário","Toque no 📅 no topo pra ver seu progresso!"]].map(([ic,t,d])=>(
+          {[["🫁","Respire","Inspire antes, expire no esforço."],["🎯","Postura","3 seg de check antes de cada série."],["🏋️","Carga","Registre o peso após cada exercício — veja sua evolução!"],["📸","Foto","Toca em 'ver foto + dica' pra ver qual máquina usar."],["💧","Hidrate","Um gole de água entre cada exercício."],["✅","Check","Marque ao terminar — dopamina liberada!"],["📅","Calendário","Toque no 📅 no topo pra ver seu progresso!"]].map(([ic,t,d])=>(
             <div key={t} style={{display:"flex",gap:10,marginBottom:9}}>
               <span style={{fontSize:16}}>{ic}</span>
               <div style={{fontSize:12}}><span style={{fontWeight:800,color:"#ccc"}}>{t}: </span><span style={{color:"#555"}}>{d}</span></div>
